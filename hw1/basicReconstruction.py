@@ -72,6 +72,8 @@ def mlsReconstruction(points, normals, X, Y, Z):
         IF    : implicit function sampled at the grid points
     """
 
+    print("Points", points.shape)
+
     # idx stores the index to the nearest surface point for each grid point in Q.
     # we use provided knnsearch function        
     Q = np.array([X.reshape(-1), Y.reshape(-1), Z.reshape(-1)]).transpose()
@@ -84,11 +86,15 @@ def mlsReconstruction(points, normals, X, Y, Z):
     ################################################
      
     # compute the indices of the closest surface points for each point in the cloud
-    csp = points[knnsearch(points, points, 1).reshape(-1)]        
-    cloud_dist = np.sqrt(np.sum((points - csp) ** 2, 1))
-    inv_beta = 1 / (2 * np.average(cloud_dist))
+    cspts = points[knnsearch(points, points, 1).reshape(-1)]   
+    csp_dist = np.sqrt(np.sum((points - cspts) ** 2, 1))
+    inv_beta = 1 / (2 * np.average(csp_dist))
 
     pj, nj = points[idx], normals[idx]
+
+    print(Q.shape)
+    print(pj.shape)
+    print(nj.shape)
 
     # reassign axes for easier broadcast operations 
     pj = np.swapaxes(pj, 0, 1)
@@ -135,11 +141,8 @@ def naiveReconstruction(points, normals, X, Y, Z):
     idx_map = idx.reshape(-1)
     pj, nj = points[idx_map], normals[idx_map]
 
-    tmp = np.multiply(Q - pj, nj)
-
-    IF = np.sum(tmp, 1).reshape((X.shape[0], X.shape[1], X.shape[2]))
-
-    print(IF.shape)
+    IF = np.sum(np.multiply(Q - pj, nj), 1) \
+            .reshape((X.shape[0], X.shape[1], X.shape[2]))
 
     ################################################
     # <================END CODE<================>
@@ -167,10 +170,10 @@ if __name__ == '__main__':
     # create grid whose vertices will be used to sample the implicit function
 
     # uncomment this for report and presenting results 
-    X,Y,Z,max_dimensions,min_dimensions = createGrid(points, 64)
+    # X,Y,Z,max_dimensions,min_dimensions = createGrid(points, 64)
 
     # quick debug 
-    # X,Y,Z,max_dimensions,min_dimensions = createGrid(points, 16)
+    X,Y,Z,max_dimensions,min_dimensions = createGrid(points, 16)
 
     print("starting reconstruction")
     if args.method == 'mls':
@@ -189,4 +192,4 @@ if __name__ == '__main__':
 
     print("done")
 
-    showMeshReconstruction(IF)
+    # showMeshReconstruction(IF)
