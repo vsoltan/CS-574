@@ -41,7 +41,7 @@ def knnsearch(Q, R, K):
     # print("==>Nearest neighbour search completed!")
     # return idx
 
-    # Optimized code 
+    # Optimized code, credit: Nicolas van Kempen, Piazza @13
     N, _ = Q.shape
     idx = np.zeros((N, K), dtype = int)
     fident = np.array_equal(Q, R)
