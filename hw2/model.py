@@ -13,7 +13,6 @@ class Conv2dConfig():
             self.stride, self.padding)
         self.W_out = conv_out_size(self.W, self.kernel_size[1], \
             self.stride, self.padding)
-        print(self.H_out, self.W_out)
         self.groups, self.bias = groups, bias 
 
     ''' created layer takes input with size (N, C_in, H, W) and produces output with size 
@@ -42,21 +41,19 @@ class CNN(nn.Module):
         self.conv_2 = conf2.createLayer()
         self.layer_norm_2 = nn.LayerNorm((conf2.C_out, conf2.H_out, conf2.W_out))
 
-        # conf3 = Conv2dConfig((12, 1, 112, 112), 16, (1, 1), 1, 0)
-        # self.conv_ptwise_1 = conf3.createLayer()
+        conf3 = Conv2dConfig((12, conf2.C_out, int(conf2.H_out / 2), int(conf2.W_out / 2)), 16, (1, 1), 1, 0)
+        self.conv_ptwise_1 = conf3.createLayer()
 
-        # conf4 = Conv2dConfig((12, 1, 112, 112), 16, (7, 7), 1, 0, 16)
-        # self.conv_dwise = conf4.createLayer() 
-        # self.layer_norm_3 = nn.LayerNorm((conf3.C_out, conf3.H_out, conf3.W_out))
+        conf4 = Conv2dConfig((12, conf3.C_out, conf3.H_out, conf3.W_out), 16, (7, 7), 1, 0, 16)
+        self.conv_dwise = conf4.createLayer() 
+        self.layer_norm_3 = nn.LayerNorm((conf4.C_out, conf4.H_out, conf4.W_out))
 
-        # conf5 = Conv2dConfig((12, 1, 112, 112), 32, (1, 1), 1, 0)
-        # self.conv_ptwise_2 = conf5.createLayer()
+        conf5 = Conv2dConfig((12, conf4.C_out, conf4.H_out, conf4.W_out), 32, (1, 1), 1, 0)
+        self.conv_ptwise_2 = conf5.createLayer()
 
-        # conf6 = Conv2dConfig()
-        # self.linear = conf6.createLayer()
-
-        # change this obviously!
-        self.naive = nn.Conv2d(in_channels=1, out_channels=num_classes, kernel_size=112, stride=1, padding=0, bias=True) 
+        conf6 = Conv2dConfig((12, conf5.C_out, int(conf5.H_out / 2), int(conf5.W_out / 2)), \
+            num_classes, (int(conf5.H_out / 2), int(conf5.W_out / 2)), 1, 0, 1, True)
+        self.fc = conf6.createLayer()
         
     def forward(self, x):
         """
@@ -65,10 +62,13 @@ class CNN(nn.Module):
 
         """
 
-        # change this obviously!
         tmp = self.max_pool(self.leaky_relu(self.layer_norm_1(self.conv_1(x))))
+        # print('tmp size', tmp.size())
 
-        out = self.conv_2(tmp)
-        print(out.size())
+        tmp = self.conv_ptwise_1(self.max_pool(self.leaky_relu(self.layer_norm_2(self.conv_2(tmp)))))
+        # print('tmp size2', tmp.size())
+
+        out = self.fc(self.conv_ptwise_2(self.max_pool(self.leaky_relu(self.layer_norm_3(self.conv_dwise(tmp))))))
+        # print('out size', out.size())
         
         return out
