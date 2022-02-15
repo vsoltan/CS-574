@@ -7,7 +7,7 @@ train_path = './dataset/train'
 test_path = './dataset/test'
 
 use_cuda = True 
-verbose_flag = True 
+verbose_flag = False 
 
 # TRAIN
 model, info = trainMVShapeClassifier(train_path, cuda=use_cuda, verbose=verbose_flag)

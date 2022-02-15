@@ -61,14 +61,7 @@ class CNN(nn.Module):
         DEFINE YOUR FORWARD PASS HERE
 
         """
-
         tmp = self.max_pool(self.leaky_relu(self.layer_norm_1(self.conv_1(x))))
-        # print('tmp size', tmp.size())
-
         tmp = self.conv_ptwise_1(self.max_pool(self.leaky_relu(self.layer_norm_2(self.conv_2(tmp)))))
-        # print('tmp size2', tmp.size())
-
         out = self.fc(self.conv_ptwise_2(self.max_pool(self.leaky_relu(self.layer_norm_3(self.conv_dwise(tmp))))))
-        # print('out size', out.size())
-        
         return out

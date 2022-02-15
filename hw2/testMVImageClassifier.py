@@ -50,7 +50,17 @@ def testMVImageClassifier(dataset_path, model, info, pooling = 'mean', cuda=Fals
                >> pooling = 'mean' or pooling = 'max'
             
              '''
-            predicted_label = 0 # obviously change this
+
+            if pooling == 'mean':
+                avgs = np.average(scores, axis=0)
+                predicted_label = np.argmax(avgs, axis=0)
+            elif pooling == 'max':
+                maxp = np.amax(scores, axis=0)
+                predicted_label = np.argmax(maxp, axis=0)
+            else:
+                print('Unsupported prediction strategy!')
+                return 
+
             if predicted_label != idx:
                 test_err += 1
 
