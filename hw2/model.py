@@ -58,7 +58,7 @@ class CNN(nn.Module):
         
         conf2 = Conv2dConfig(input_size=(num_views, conf1.C_out, int(conf1.H_out / 2), int(conf1.W_out / 2)), \
             out_channels=8, kernel_size=(7, 7), stride=2, padding=0, groups=8)
-        self.conv_2 = conf2.createLayer(init_scheme='kaiming')
+        self.conv_dwise_1 = conf2.createLayer(init_scheme='kaiming')
         self.layer_norm_2 = nn.LayerNorm((conf2.C_out, conf2.H_out, conf2.W_out))
 
         conf3 = Conv2dConfig(input_size=(num_views, conf2.C_out, int(conf2.H_out / 2), int(conf2.W_out / 2)), \
@@ -67,7 +67,7 @@ class CNN(nn.Module):
 
         conf4 = Conv2dConfig(input_size=(num_views, conf3.C_out, conf3.H_out, conf3.W_out), out_channels=16, \
             kernel_size=(7, 7), stride=1, padding=0, groups=16)
-        self.conv_dwise = conf4.createLayer(init_scheme='kaiming') 
+        self.conv_dwise_2 = conf4.createLayer(init_scheme='kaiming') 
         self.layer_norm_3 = nn.LayerNorm((conf4.C_out, conf4.H_out, conf4.W_out))
 
         conf5 = Conv2dConfig(input_size=(num_views, conf4.C_out, conf4.H_out, conf4.W_out), out_channels=32, \
@@ -86,6 +86,6 @@ class CNN(nn.Module):
 
         """
         tmp = self.max_pool(self.leaky_relu(self.layer_norm_1(self.conv_1(x))))
-        tmp = self.conv_ptwise_1(self.max_pool(self.leaky_relu(self.layer_norm_2(self.conv_2(tmp)))))
-        out = self.fc(self.conv_ptwise_2(self.max_pool(self.leaky_relu(self.layer_norm_3(self.conv_dwise(tmp))))))
+        tmp = self.conv_ptwise_1(self.max_pool(self.leaky_relu(self.layer_norm_2(self.conv_dwise_1(tmp)))))
+        out = self.fc(self.conv_ptwise_2(self.max_pool(self.leaky_relu(self.layer_norm_3(self.conv_dwise_2(tmp))))))
         return out
