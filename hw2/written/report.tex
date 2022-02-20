@@ -1,0 +1,23 @@
+\documentclass{article}
+\usepackage{graphicx}
+\usepackage{caption}
+\usepackage{url}
+
+\title{Multi-View CNN for Shape Classification}
+\author{Valeriy Soltan}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\section*{Results}
+The test error fluctuates each run as we use stochastic gradient descent to train the network. However, I was able to get the following result: \\
+
+\noindent \texttt{mean view-pooling 11.5 \%} \\
+\texttt{max view-pooling: 15.5 \%}
+
+\begin{center}
+	\includegraphics[scale=0.35]{assets/result}
+\end{center}
+
+\end{document}

@@ -6,7 +6,7 @@ import torch
 train_path = './dataset/train'
 test_path = './dataset/test'
 
-use_cuda = True 
+use_cuda = False  
 verbose_flag = False 
 
 # TRAIN
