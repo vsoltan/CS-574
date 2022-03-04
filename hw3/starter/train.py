@@ -163,7 +163,9 @@ def NTcrossentropy(vtx_feature, pts_feature, corr, tau=0.07):
 
     corr_vtx_feature = vtx_feature[corr[:, 0]]
     corr_pts_feature = pts_feature[corr[:, 1]]
+
     num = torch.exp(torch.sum(corr_vtx_feature * corr_pts_feature, dim=1) / tau)
+    print(num)
     # print(num)
     # exit()
     den = torch.sum(torch.exp(torch.matmul(corr_vtx_feature, torch.transpose(pts_feature, 0, 1)) / tau), dim=1)
