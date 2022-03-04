@@ -165,14 +165,9 @@ def NTcrossentropy(vtx_feature, pts_feature, corr, tau=0.07):
     corr_pts_feature = pts_feature[corr[:, 1]]
 
     num = torch.exp(torch.sum(corr_vtx_feature * corr_pts_feature, dim=1) / tau)
-    print(num)
-    # print(num)
-    # exit()
     den = torch.sum(torch.exp(torch.matmul(corr_vtx_feature, torch.transpose(pts_feature, 0, 1)) / tau), dim=1)
-    # print(den)
-    # exit()
     L = -torch.log(num / den)
-    loss = torch.sum(L, dim=0)
+    loss = torch.mean(L, dim=0) # mean
     return loss
 
 # function to estimate a rotation matrix to align the vertices and the points based on the predicted reliable correspondences.
@@ -282,7 +277,7 @@ if __name__ == "__main__":
     parser.add_argument("--lr", default=1e-2, type=float, help="Initial learning rate")
     parser.add_argument("--train_batch", default=8, type=int, help="Batch size for training")
     parser.add_argument("--train_corrmask", action="store_true", help="Train also the correspondence mask branch")    
-    parser.add_argument("--tau_nce", default=0.01, type=float, help="Parameter used in the temperature-scaled cross entropy loss")
+    parser.add_argument("--tau_nce", default=0.07, type=float, help="Parameter used in the temperature-scaled cross entropy loss")
 
  # various options for testing and evaluation
     parser.add_argument("--save_results", default=True, action="store_true", help="Save results during testing - useful for visualization")     
