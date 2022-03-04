@@ -159,12 +159,18 @@ def test(test_pts_filelist, model, args, save_results):
 #        a corr matrix Kx2 that stores K ground-truth pairs of corresponding vertices-points
 # the function should output the normalized temperature-scaled cross entropy loss
 # **** YOU SHOULD CHANGE THIS FUNCTION, CURRENTLY IT IS INCORRECT ****
-def NTcrossentropy(vtx_feature, pts_feature, corr, tau=0.01):
-    cross_entropy_loss = torch.nn.CrossEntropyLoss(reduction='mean')    
-    corr_vtx_feature = vtx_feature[corr[:, 0]]    
-    prod = torch.randn( corr_vtx_feature.size(0), pts_feature.size(0), requires_grad=True ).to(device)
-    label = corr[:, 1]
-    loss = cross_entropy_loss(prod, label)
+def NTcrossentropy(vtx_feature, pts_feature, corr, tau=0.07):
+
+    corr_vtx_feature = vtx_feature[corr[:, 0]]
+    corr_pts_feature = pts_feature[corr[:, 1]]
+    num = torch.exp(torch.sum(corr_vtx_feature * corr_pts_feature, dim=1) / tau)
+    # print(num)
+    # exit()
+    den = torch.sum(torch.exp(torch.matmul(corr_vtx_feature, torch.transpose(pts_feature, 0, 1)) / tau), dim=1)
+    # print(den)
+    # exit()
+    L = -torch.log(num / den)
+    loss = torch.sum(L, dim=0)
     return loss
 
 # function to estimate a rotation matrix to align the vertices and the points based on the predicted reliable correspondences.

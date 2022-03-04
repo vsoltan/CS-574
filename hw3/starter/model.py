@@ -1,5 +1,6 @@
 import torch
 from torch.nn import Sequential as Seq, Linear as Lin, LeakyReLU, GroupNorm
+from torch.nn.functional import normalize
 
 # the "MLP" block that you will use the in the PointNet and CorrNet modules you will implement
 # This block is made of a linear transformation (FC layer), 
@@ -34,12 +35,19 @@ def MLP(channels, enable_group_norm=True):
 class PointNet(torch.nn.Module):
     def __init__(self, num_input_features, num_output_features):
         super(PointNet, self).__init__()
-        self.mlp = MLP([num_input_features, num_output_features])
+        self.mlp1 = MLP([num_input_features, 32, 64, 128])
+        self.mlp2 = MLP([128, 128])
+        self.mlp3 = MLP([256, 128, 64])
+        self.lin  = MLP([64, num_output_features])
+
 
     def forward(self, x):
-        x = self.mlp(x)
-        return x
-
+        N, _ = x.size() 
+        fi = self.mlp2(self.mlp1(x))
+        g = torch.max(fi, 0).values
+        concat = torch.cat((fi, g.repeat(N, 1)), 1)
+        yi = self.mlp3(concat) 
+        return self.lin(yi)
 
 # CorrNet module that serves 2 purposes:  
 # (a) uses the PointNet module to extract the per-point descriptors of the point cloud (out_pts)
@@ -65,13 +73,22 @@ class CorrNet(torch.nn.Module):
         super(CorrNet, self).__init__()
         self.train_corrmask = train_corrmask
         self.pointnet_share = PointNet(3, num_output_features)
-        self.mlp = MLP([3, 1]) # you won't use this, delete it, this is there just for the code to run
+        self.mlp = MLP([2 * num_output_features + 1, 64])
+        self.lin = Lin(64, 1)
 
     def forward(self, vtx, pts):
         out_vtx = self.pointnet_share(vtx)
         out_pts = self.pointnet_share(pts)
+
+        out_vtx = normalize(out_vtx, p=2)
+        out_pts = normalize(out_pts, p=2)
+
         if self.train_corrmask:            
-            out_corrmask = self.mlp(vtx) # you won't use this, delete it, this is there just for the code to run
+            sim_mat = torch.matmul(out_vtx, torch.transpose(out_pts, 0, 1))
+            sim, sim_idx = torch.min(sim_mat, dim=1)
+            corr_pts = out_pts[sim_idx]
+            c = torch.cat((out_vtx, corr_pts, sim.unsqueeze(1)), dim=1)
+            out_corrmask = self.lin(self.mlp(c))
         else:
             out_corrmask = None
 
