@@ -165,16 +165,18 @@ def NTcrossentropy(vtx_feature, pts_feature, corr, tau=0.07):
     corr_pts_feature = pts_feature[corr[:, 1]]
 
     num = torch.exp(torch.sum(corr_vtx_feature * corr_pts_feature, dim=1) / tau)
-    den = torch.sum(torch.exp(torch.matmul(corr_vtx_feature, torch.transpose(pts_feature, 0, 1)) / tau), dim=1)
+    den = torch.sum(torch.exp(torch.matmul(corr_vtx_feature, pts_feature.t()) / tau), dim=1)
     L = -torch.log(num / den)
-    loss = torch.mean(L, dim=0) # mean
+    loss = torch.mean(L, dim=0) # mean and sum are equivalent here
     return loss
 
 def solve_procrustes(P, Q):
-    S = torch.matmul(torch.transpose(P, 0, 1), Q)
+    S = torch.matmul(P.t(), Q)
     U, _, V = torch.svd(S)
     V_t = V.t()
     R = torch.matmul(U, V_t)
+
+    # if reflection, turn into an optimal rotation
     if (torch.det(R).item() < 0):
         V_t[2, :] *= -1
         R = torch.matmul(U, V_t)
@@ -183,8 +185,12 @@ def solve_procrustes(P, Q):
 # function to estimate a rotation matrix to align the vertices and the points based on the predicted reliable correspondences.
 # **** YOU SHOULD CHANGE THIS FUNCTION ****
 def fit_rotation(vtx, pts, vtx_feature, pts_feature, corrmask):
+
     # acceptable correspondences are at least 0.5 
     a = corrmask > 0.5
+    if (a.size()[0] == 0):
+        return Rotation.from_matrix([[0, -1, 0], [1, 0, 0], [0, 0, 1]]).as_quat()
+
     acc_corr_idx = a.nonzero(as_tuple=True)
 
     # registered vertices and their descriptors
@@ -192,10 +198,15 @@ def fit_rotation(vtx, pts, vtx_feature, pts_feature, corrmask):
     reg_vert_desc = vtx_feature[acc_corr_idx]
 
     # calculate closest descriptor to get corresponding point
-    mind_idx = torch.min(torch.cdist(reg_vert_desc, pts_feature, p=2), dim=1).indices
-    reg_pts = pts[mind_idx]
+    max_idx = torch.max(torch.matmul(reg_vert_desc, pts_feature.t()), dim=1).indices
 
-    R = Rotation.from_matrix(solve_procrustes(reg_vert, reg_pts).cpu())
+    reg_pts = pts[max_idx]
+
+    vert_centroid = torch.mean(reg_vert, dim=0)
+    pts_centroid  = torch.mean(reg_pts, dim=0)
+
+    R = Rotation.from_matrix(solve_procrustes(reg_vert - vert_centroid, \
+        reg_pts - pts_centroid).cpu())
     return R.as_quat()
     # keep the following line, transform the estimated to rotation matrix to a quaternion
     # the starter code handles the rest

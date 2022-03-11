@@ -84,7 +84,7 @@ class CorrNet(torch.nn.Module):
         out_pts = normalize(out_pts, p=2)
 
         if self.train_corrmask:            
-            sim_mat = torch.matmul(out_vtx, torch.transpose(out_pts, 0, 1))
+            sim_mat = torch.matmul(out_vtx, out_pts.t())
             sim, sim_idx = torch.max(sim_mat, dim=1)
             corr_pts = out_pts[sim_idx]
             c = torch.cat((out_vtx, corr_pts, sim.unsqueeze(1)), dim=1)
