@@ -1,0 +1,2 @@
+PoinTr: Diverse Point Cloud Completion with Geometry-Aware Transformers
+https://arxiv.org/pdf/2108.08839.pdf
