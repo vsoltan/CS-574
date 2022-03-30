@@ -82,20 +82,19 @@ class SdfDataset(data.Dataset):
                 print(len(self.points))
                 sample_size = 80
                 sampled_points = None 
+                sampled_sdfs = None 
                 for i, point in enumerate(self.points):
-                    normal = np.repeat(self.normals[i].reshape(1, 3), sample_size, axis=0)
-                    point = np.repeat(point.reshape(1, 3), sample_size, axis = 0)
-                    epsilon = np.random.normal(0, 0.05, sample_size).reshape(sample_size, 1)
-                    sample = point + epsilon * normal
+                    normal = np.repeat(self.normals[i].reshape(1, 3), sample_size, axis=0) # (80,3)
+                    point = np.repeat(point.reshape(1, 3), sample_size, axis = 0) # stack 3d point 80 times -> (80, 3)
+                    epsilon = np.random.normal(0, 0.05, sample_size).reshape(sample_size, 1) # (80, 1) 
+                    sample = point + epsilon * normal # perturbed points 
                     sampled_points = sample if sampled_points is None \
                         else np.concatenate((sampled_points, sample), axis=0)  
-
-                print(sampled_points.shape)  
+                    sampled_sdfs = epsilon if sampled_sdfs is None \
+                        else np.concatenate((sampled_sdfs, epsilon))
                 
                 self.samples_xyz = sampled_points
-                # self.samples_sdf = 5 # where do the SDF values come from??
-                self.samples_sdf = np.random.random(size=(self.points.shape[0], 1))
-                # self.samples_xyz = self.points + np.random.random(size=(self.points.shape[0], 3))
+                self.samples_sdf = sampled_sdfs
                 # ***********************************************************************
 
     def __len__(self):
@@ -127,7 +126,7 @@ class SdfDataset(data.Dataset):
 
             xyz = point_sample + epsilon[:, np.newaxis] * norms_sample
 
-            gt_sdf = np.random.random(size=(point_cloud.shape[0], 1))
+            gt_sdf = epsilon.reshape(sample_size, 1)
 
             # ***********************************************************************
 

@@ -2,7 +2,6 @@ import torch.nn as nn
 import torch
 import torch.nn.functional as F
 
-
 class Decoder(nn.Module):
     def __init__(
         self,
@@ -22,7 +21,10 @@ class Decoder(nn.Module):
 
         self.fully_connected_layers = [
             nn.Sequential(
-                nn.utils.weight_norm(nn.Linear(3, 512)), 
+                nn.utils.weight_norm(nn.Linear(
+                    3 if i == 0 else 512,
+                    509 if i == 3 else 512
+                )), 
                 nn.ReLU(), 
                 nn.Dropout(self.dropout_prob)
             ) for i in range(0, 7)
@@ -36,12 +38,13 @@ class Decoder(nn.Module):
     def forward(self, input):
         # **** YOU SHOULD IMPLEMENT THE FORWARD PASS HERE ****
         # Based on the architecture defined above, implement the feed forward procedure
-        output = self.fully_connected_layers[0](input) 
-        for i, fc in enumerate(self.fully_connected_layers[1:]):
-            output = fc(output)
+        output = None
+        for i, fc in enumerate(self.fully_connected_layers):
+            if i == 0: 
+                output = fc(input)
+            else: 
+                output = fc(output)
             if i == 3: 
-                output = torch.cat((output, input), dim=0)
-
+                output = torch.vstack((output.t(), input.t())).t()
         return self.th(self.fc_reduce(output))
-        
         # ***********************************************************************

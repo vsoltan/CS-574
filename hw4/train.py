@@ -12,9 +12,9 @@ import torch.backends.cudnn as cudnn
 from model import Decoder
 from utils import normalize_pts, normalize_normals, SdfDataset, mkdir_p, isdir
 
-
-device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-
+# why are different tensors on diff devices??
+# device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+device = torch.device("cpu")
 
 # function to save a checkpoint during training, including the best model so far
 def save_checkpoint(state, is_best, checkpoint_folder='checkpoints/', filename='checkpoint.pth.tar'):
@@ -23,35 +23,36 @@ def save_checkpoint(state, is_best, checkpoint_folder='checkpoints/', filename='
     if is_best:
         shutil.copyfile(checkpoint_file, os.path.join(checkpoint_folder, 'model_best.pth.tar'))
 
-# clamps t value within the limits (-σ,σ). 
-def clamp(t, sigma):
-    return max(min(t, sigma), -sigma)
-
 def train(dataset, model, optimizer, args):
     model.train()  # switch to train mode
     loss_sum = 0.0
     loss_count = 0.0
     num_batch = len(dataset)
+
+    sigma = args.clamping_distance
     for i in range(num_batch):
         data = dataset[i]  # a dict
 
         # **** YOU SHOULD ADD TRAINING CODE HERE, CURRENTLY IT IS INCORRECT ****
+
+        # perturbed points 
         xyz_tensor = data['xyz'].to(device)
 
-        # apply model on sample points 
-        # fpi = model(xyz_tensor)
+        # apply model on perturbed sample points 
+        fpi = torch.clamp(model(xyz_tensor), min=-sigma, max=sigma) 
 
         # get ground truth sdf values 
-        si = data['gt_sdf'].to(device)
-
-        # sigma = args.clamping_distance
-        # loss_sum += torch.norm(clamp(fpi, sigma)  - clamp(si, sigma), p=1)
+        si = torch.clamp(data['gt_sdf'].to(device), min=-sigma, max=sigma) 
+        loss_sum += torch.norm(fpi - si, p=1)
 
         loss_count += xyz_tensor.shape[0]
         # ***********************************************************************
     
+    # update gradients in network
+    loss = loss_sum / loss_count 
+    optimizer.step()
     # can divide by loss_count because all loss will be scaled by a scalar (1024 * num_batch)
-    return loss_sum / loss_count 
+    return loss 
 
 # validation function
 def val(dataset, model, optimizer, args):
@@ -59,17 +60,30 @@ def val(dataset, model, optimizer, args):
     loss_sum = 0.0
     loss_count = 0.0
     num_batch = len(dataset)
+    sigma = args.clamping_distance
+    print("num input points", len(dataset.points))
     for i in range(num_batch):
         data = dataset[i]  # a dict
+
+        # print("xyz", data['xyz'].shape) # 1024 or 720, 3
+        # print("gt_sdf", data['gt_sdf'].shape) # 1024 or 720, 1
+        
+        # confused as to what I should be doing here. 
 
         # **** YOU SHOULD ADD TRAINING CODE HERE, CURRENTLY IT IS INCORRECT ****
         with torch.no_grad():
             xyz_tensor = data['xyz'].to(device)
-            loss_sum += 1. * xyz_tensor.shape[0]
-            loss_count += xyz_tensor.shape[0]
-        # ***********************************************************************
 
-    return loss_sum / loss_count
+            # apply model on perturbed sample points 
+            fpi = torch.clamp(model(xyz_tensor), min=-sigma, max=sigma) 
+
+            # get ground truth sdf values 
+            si = torch.clamp(data['gt_sdf'].to(device), min=-sigma, max=sigma) 
+            loss_sum += torch.norm(fpi - si, p=1)
+        # ***********************************************************************
+    loss = loss_sum / loss_count
+    optimizer.step()
+    return loss 
 
 
 # testing function
