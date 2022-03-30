@@ -23,6 +23,9 @@ def save_checkpoint(state, is_best, checkpoint_folder='checkpoints/', filename='
     if is_best:
         shutil.copyfile(checkpoint_file, os.path.join(checkpoint_folder, 'model_best.pth.tar'))
 
+# clamps t value within the limits (-σ,σ). 
+def clamp(t, sigma):
+    return max(min(t, sigma), -sigma)
 
 def train(dataset, model, optimizer, args):
     model.train()  # switch to train mode
@@ -34,12 +37,21 @@ def train(dataset, model, optimizer, args):
 
         # **** YOU SHOULD ADD TRAINING CODE HERE, CURRENTLY IT IS INCORRECT ****
         xyz_tensor = data['xyz'].to(device)
-        loss_sum += 1. * xyz_tensor.shape[0]
+
+        # apply model on sample points 
+        # fpi = model(xyz_tensor)
+
+        # get ground truth sdf values 
+        si = data['gt_sdf'].to(device)
+
+        # sigma = args.clamping_distance
+        # loss_sum += torch.norm(clamp(fpi, sigma)  - clamp(si, sigma), p=1)
+
         loss_count += xyz_tensor.shape[0]
         # ***********************************************************************
-
-    return loss_sum / loss_count
-
+    
+    # can divide by loss_count because all loss will be scaled by a scalar (1024 * num_batch)
+    return loss_sum / loss_count 
 
 # validation function
 def val(dataset, model, optimizer, args):
@@ -147,6 +159,7 @@ def main(args):
     scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, args.schedule, gamma=args.gamma)
 
     for epoch in range(args.start_epoch, args.epochs):
+        optimizer.step() # make warning go away? 
         train_loss = train(train_dataset, model, optimizer, args)
         val_loss = val(val_dataset, model, optimizer, args)
         scheduler.step()

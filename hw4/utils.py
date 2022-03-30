@@ -1,3 +1,4 @@
+from random import sample
 import torch.utils.data as data
 import numpy as np
 import math
@@ -77,8 +78,24 @@ class SdfDataset(data.Dataset):
                 # a Gaussian distribution described in the assignment page.
                 # For validation set, just do this sampling process for one time.
                 # For training set, do this sampling process per each iteration (see code in __getitem__).
+
+                print(len(self.points))
+                sample_size = 80
+                sampled_points = None 
+                for i, point in enumerate(self.points):
+                    normal = np.repeat(self.normals[i].reshape(1, 3), sample_size, axis=0)
+                    point = np.repeat(point.reshape(1, 3), sample_size, axis = 0)
+                    epsilon = np.random.normal(0, 0.05, sample_size).reshape(sample_size, 1)
+                    sample = point + epsilon * normal
+                    sampled_points = sample if sampled_points is None \
+                        else np.concatenate((sampled_points, sample), axis=0)  
+
+                print(sampled_points.shape)  
+                
+                self.samples_xyz = sampled_points
+                # self.samples_sdf = 5 # where do the SDF values come from??
                 self.samples_sdf = np.random.random(size=(self.points.shape[0], 1))
-                self.samples_xyz = self.points + np.random.random(size=(self.points.shape[0], 3))
+                # self.samples_xyz = self.points + np.random.random(size=(self.points.shape[0], 3))
                 # ***********************************************************************
 
     def __len__(self):
@@ -97,8 +114,21 @@ class SdfDataset(data.Dataset):
             # Sample random points around surface point along the normal direction based on
             # a Gaussian distribution described in the assignment page.
             # For training set, do this sampling process per each iteration.
-            gt_sdf = np.random.random(size=(self.points.shape[0], 1))
-            xyz = self.points + np.random.random(size=(self.points.shape[0], 3))
+
+            sample_size = 1024 
+            epsilon = np.random.normal(0, 0.05, sample_size)
+
+            point_cloud = self.points
+            point_norms = self.normals  
+            sample_idx = np.random.choice(point_cloud.shape[0], 1024, replace=True)
+
+            point_sample = point_cloud[sample_idx]
+            norms_sample = point_norms[sample_idx]
+
+            xyz = point_sample + epsilon[:, np.newaxis] * norms_sample
+
+            gt_sdf = np.random.random(size=(point_cloud.shape[0], 1))
+
             # ***********************************************************************
 
         else:
