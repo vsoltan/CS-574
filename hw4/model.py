@@ -21,6 +21,7 @@ class Decoder(nn.Module):
         self.dropout_prob = dropout_prob
         self.th = nn.Tanh()
 
+        # seventh layer shouldn't have weight norm or relu or dropout
         self.fully_connected_layers = [
             nn.Sequential(
                 nn.utils.weight_norm(nn.Linear(
@@ -47,6 +48,6 @@ class Decoder(nn.Module):
             else: 
                 output = fc(output)
             if i == 3: 
-                output = torch.vstack((output.t(), input.t())).t()
+                output = torch.cat((output, input), dim=1)
         return self.th(self.fc_reduce(output))
         # ***********************************************************************

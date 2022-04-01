@@ -27,6 +27,8 @@ def train(dataset, model, optimizer, args):
     loss_count = 0.0
     num_batch = len(dataset)
 
+    torch.autograd.set_detect_anomaly(True)
+
     sigma = args.clamping_distance
     for i in range(num_batch):
         data = dataset[i]  # a dict
@@ -41,22 +43,23 @@ def train(dataset, model, optimizer, args):
 
         # get ground truth sdf values 
         si = torch.clamp(data['gt_sdf'].to(device), min=-sigma, max=sigma) 
-        loss_sum += torch.norm(fpi - si, p=1)
+        loss = torch.norm(fpi - si, p=1)
+        loss_sum += loss 
 
-        # optimizer.zero_grad()
+        optimizer.zero_grad()
 
-        # loss_sum.backward(retain_graph=True)
+        loss.backward()
 
-        # optimizer.step()
+        optimizer.step()
 
         loss_count += xyz_tensor.shape[0]
         
         # ***********************************************************************
     
     # update gradients in network
-    loss = loss_sum / loss_count 
+    total_loss = loss_sum / loss_count 
     # can divide by loss_count because all loss will be scaled by a scalar (1024 * num_batch)
-    return loss 
+    return total_loss 
 
 # validation function
 def val(dataset, model, optimizer, args):
@@ -83,10 +86,12 @@ def val(dataset, model, optimizer, args):
             # get ground truth sdf values 
             si = torch.clamp(data['gt_sdf'].to(device), min=-sigma, max=sigma) 
             loss_sum += torch.norm(fpi - si, p=1)
+
+            loss_count += xyz_tensor.shape[0]
         # ***********************************************************************
-    loss = loss_sum / loss_count
-    optimizer.step()
-    return loss 
+    total_loss = loss_sum / loss_count
+    
+    return total_loss 
 
 
 # testing function
