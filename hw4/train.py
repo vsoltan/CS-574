@@ -12,9 +12,7 @@ import torch.backends.cudnn as cudnn
 from model import Decoder
 from utils import normalize_pts, normalize_normals, SdfDataset, mkdir_p, isdir
 
-# why are different tensors on diff devices??
-# device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-device = torch.device("cpu")
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 # function to save a checkpoint during training, including the best model so far
 def save_checkpoint(state, is_best, checkpoint_folder='checkpoints/', filename='checkpoint.pth.tar'):
@@ -45,12 +43,18 @@ def train(dataset, model, optimizer, args):
         si = torch.clamp(data['gt_sdf'].to(device), min=-sigma, max=sigma) 
         loss_sum += torch.norm(fpi - si, p=1)
 
+        # optimizer.zero_grad()
+
+        # loss_sum.backward(retain_graph=True)
+
+        # optimizer.step()
+
         loss_count += xyz_tensor.shape[0]
+        
         # ***********************************************************************
     
     # update gradients in network
     loss = loss_sum / loss_count 
-    optimizer.step()
     # can divide by loss_count because all loss will be scaled by a scalar (1024 * num_batch)
     return loss 
 
@@ -61,7 +65,6 @@ def val(dataset, model, optimizer, args):
     loss_count = 0.0
     num_batch = len(dataset)
     sigma = args.clamping_distance
-    print("num input points", len(dataset.points))
     for i in range(num_batch):
         data = dataset[i]  # a dict
 

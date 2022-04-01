@@ -83,6 +83,7 @@ class SdfDataset(data.Dataset):
                 sample_size = 80
                 sampled_points = None 
                 sampled_sdfs = None 
+
                 for i, point in enumerate(self.points):
                     normal = np.repeat(self.normals[i].reshape(1, 3), sample_size, axis=0) # (80,3)
                     point = np.repeat(point.reshape(1, 3), sample_size, axis = 0) # stack 3d point 80 times -> (80, 3)
@@ -92,6 +93,11 @@ class SdfDataset(data.Dataset):
                         else np.concatenate((sampled_points, sample), axis=0)  
                     sampled_sdfs = epsilon if sampled_sdfs is None \
                         else np.concatenate((sampled_sdfs, epsilon))
+
+                # 16080 is 201 (size of validation set) * 80 
+                # print(sampled_points.shape) # 16080, 3
+                # print(sampled_sdfs.shape) # 16080, 1
+                # print()
                 
                 self.samples_xyz = sampled_points
                 self.samples_sdf = sampled_sdfs

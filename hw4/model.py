@@ -2,6 +2,8 @@ import torch.nn as nn
 import torch
 import torch.nn.functional as F
 
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+
 class Decoder(nn.Module):
     def __init__(
         self,
@@ -27,7 +29,7 @@ class Decoder(nn.Module):
                 )), 
                 nn.ReLU(), 
                 nn.Dropout(self.dropout_prob)
-            ) for i in range(0, 7)
+            ).to(device) for i in range(0, 7)
         ] 
 
         self.fc_reduce = nn.Linear(512, 1)
