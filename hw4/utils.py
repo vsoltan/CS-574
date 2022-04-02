@@ -42,6 +42,7 @@ def normalize_normals(input_normals):
 class SdfDataset(data.Dataset):
     def __init__(self, points=None, normals=None, phase='train', args=None):
         self.phase = phase
+        self.args = args 
 
         if self.phase == 'test':
             self.bs = args.test_batch
@@ -79,7 +80,7 @@ class SdfDataset(data.Dataset):
                 # For validation set, just do this sampling process for one time.
                 # For training set, do this sampling process per each iteration (see code in __getitem__).
 
-                sample_size = 80
+                sample_size = int(args.N_samples)
                 sampled_points = None 
                 sampled_sdfs = None 
 
@@ -114,7 +115,7 @@ class SdfDataset(data.Dataset):
             # a Gaussian distribution described in the assignment page.
             # For training set, do this sampling process per each iteration.
 
-            sample_size = 1024 
+            sample_size = self.args.train_batch if self.args is not None else 1024 
             epsilon = np.random.normal(0, 0.05, sample_size)
 
             point_cloud = self.points
