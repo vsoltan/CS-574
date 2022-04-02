@@ -27,8 +27,6 @@ def train(dataset, model, optimizer, args):
     loss_count = 0.0
     num_batch = len(dataset)
 
-    torch.autograd.set_detect_anomaly(True)
-
     sigma = args.clamping_distance
     for i in range(num_batch):
         data = dataset[i]  # a dict
@@ -46,19 +44,16 @@ def train(dataset, model, optimizer, args):
         loss = torch.norm(fpi - si, p=1)
         loss_sum += loss 
 
+        # update gradients in network
         optimizer.zero_grad()
-
         loss.backward()
-
         optimizer.step()
 
         loss_count += xyz_tensor.shape[0]
         
         # ***********************************************************************
     
-    # update gradients in network
     total_loss = loss_sum / loss_count 
-    # can divide by loss_count because all loss will be scaled by a scalar (1024 * num_batch)
     return total_loss 
 
 # validation function
@@ -70,11 +65,6 @@ def val(dataset, model, optimizer, args):
     sigma = args.clamping_distance
     for i in range(num_batch):
         data = dataset[i]  # a dict
-
-        # print("xyz", data['xyz'].shape) # 1024 or 720, 3
-        # print("gt_sdf", data['gt_sdf'].shape) # 1024 or 720, 1
-        
-        # confused as to what I should be doing here. 
 
         # **** YOU SHOULD ADD TRAINING CODE HERE, CURRENTLY IT IS INCORRECT ****
         with torch.no_grad():

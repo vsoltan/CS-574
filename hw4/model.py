@@ -19,21 +19,17 @@ class Decoder(nn.Module):
         # Relu layers, Dropout layers and a tanh layer.
         self.relu = nn.ReLU()
         self.dropout_prob = dropout_prob
+        self.dropout = nn.Dropout(self.dropout_prob)
         self.th = nn.Tanh()
 
-        # seventh layer shouldn't have weight norm or relu or dropout
-        self.fully_connected_layers = [
-            nn.Sequential(
-                nn.utils.weight_norm(nn.Linear(
-                    3 if i == 0 else 512,
-                    509 if i == 3 else 512
-                )), 
-                nn.ReLU(), 
-                nn.Dropout(self.dropout_prob)
-            ).to(device) for i in range(0, 7)
-        ] 
-
-        self.fc_reduce = nn.Linear(512, 1)
+        self.fc1 = nn.utils.weight_norm(nn.Linear(3, 512)).to(device)
+        self.fc2 = nn.utils.weight_norm(nn.Linear(512, 512)).to(device)
+        self.fc3 = nn.utils.weight_norm(nn.Linear(512, 512)).to(device)
+        self.fc4 = nn.utils.weight_norm(nn.Linear(512, 509)).to(device)
+        self.fc5 = nn.utils.weight_norm(nn.Linear(512, 512)).to(device)
+        self.fc6 = nn.utils.weight_norm(nn.Linear(512, 512)).to(device)
+        self.fc7 = nn.utils.weight_norm(nn.Linear(512, 512)).to(device)
+        self.fc_reduce = nn.Linear(512, 1).to(device)
 
         # ***********************************************************************
 
@@ -41,13 +37,14 @@ class Decoder(nn.Module):
     def forward(self, input):
         # **** YOU SHOULD IMPLEMENT THE FORWARD PASS HERE ****
         # Based on the architecture defined above, implement the feed forward procedure
-        output = None
-        for i, fc in enumerate(self.fully_connected_layers):
-            if i == 0: 
-                output = fc(input)
-            else: 
-                output = fc(output)
-            if i == 3: 
-                output = torch.cat((output, input), dim=1)
-        return self.th(self.fc_reduce(output))
+        output = self.dropout(self.relu(self.fc1(input)))
+        output = self.dropout(self.relu(self.fc2(output)))
+        output = self.dropout(self.relu(self.fc3(output)))
+        output = self.dropout(self.relu(self.fc4(output)))
+        output = torch.cat((output, input), dim=1)
+        output = self.dropout(self.fc5(output))
+        output = self.dropout(self.fc6(output))
+        output = self.dropout(self.fc7(output))
+        output = self.fc_reduce(output)
+        return self.th(output)
         # ***********************************************************************

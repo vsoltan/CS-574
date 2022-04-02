@@ -79,7 +79,6 @@ class SdfDataset(data.Dataset):
                 # For validation set, just do this sampling process for one time.
                 # For training set, do this sampling process per each iteration (see code in __getitem__).
 
-                print(len(self.points))
                 sample_size = 80
                 sampled_points = None 
                 sampled_sdfs = None 
@@ -93,11 +92,6 @@ class SdfDataset(data.Dataset):
                         else np.concatenate((sampled_points, sample), axis=0)  
                     sampled_sdfs = epsilon if sampled_sdfs is None \
                         else np.concatenate((sampled_sdfs, epsilon))
-
-                # 16080 is 201 (size of validation set) * 80 
-                # print(sampled_points.shape) # 16080, 3
-                # print(sampled_sdfs.shape) # 16080, 1
-                # print()
                 
                 self.samples_xyz = sampled_points
                 self.samples_sdf = sampled_sdfs
