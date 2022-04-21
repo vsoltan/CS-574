@@ -1,5 +1,8 @@
 import torch.nn as nn
 
+IMAGE_WIDTH = 100 
+IMAGE_HEIGHT = 100
+
 class MaskedCNN(nn.Conv2d):
     """
     Masked convolution as explained in the PixelCNN variant of
@@ -36,10 +39,28 @@ class PixelCNN(nn.Module):
 
         # WRITE CODE HERE TO IMPLEMENT THE MODEL STRUCTURE
 
-        self.conv = nn.Conv2d(in_channels=1, out_channels=1, kernel_size=1)
+        self.relu = nn.LeakyReLU(0.001)
+
+        # TODO: check if you need to use bias! 
+        self.conv1 = MaskedCNN('A', in_channels=1, out_channels=16, \
+            padding=(3, 3), kernel_size=(3, 3), stride=1, dilation=3, padding_mode='reflect')
+        self.batch_norm1 = nn.BatchNorm2d(16)
+
+        self.conv2 = MaskedCNN('B', in_channels=16, out_channels=16, \
+            padding=(3, 3), kernel_size=(3, 3), stride=1, dilation=3, padding_mode='reflect')
+        self.batch_norm2 = nn.BatchNorm2d(16)
+
+        self.conv3 = MaskedCNN('B', in_channels=16, out_channels=16, \
+            padding=(3, 3), kernel_size=(3, 3), stride=1, dilation=3, padding_mode='reflect')
+        self.batch_norm3 = nn.BatchNorm2d(16)
+
+        self.conv = nn.Conv2d(in_channels=16, out_channels=1, kernel_size=1)
         self.sigmoid = nn.Sigmoid()
 
     def forward(self, x):
-
-        # WRITE CODE HERE TO IMPLEMENT THE FORWARD PASS
-        return self.conv(self.sigmoid(x))
+        block_output1 = self.relu(self.batch_norm1(self.conv1(x)))
+        block_output2 = self.relu(self.batch_norm2(self.conv2(block_output1)))
+        block_output3 = self.relu(self.batch_norm3(self.conv3(block_output2)))
+        grayscale_intensity = self.conv(block_output3)
+        print(grayscale_intensity.size()) # size if [64, 1, 100, 100] as desired 
+        return self.sigmoid(grayscale_intensity)
