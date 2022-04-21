@@ -62,5 +62,4 @@ class PixelCNN(nn.Module):
         block_output2 = self.relu(self.batch_norm2(self.conv2(block_output1)))
         block_output3 = self.relu(self.batch_norm3(self.conv3(block_output2)))
         grayscale_intensity = self.conv(block_output3)
-        print(grayscale_intensity.size()) # size if [64, 1, 100, 100] as desired 
         return self.sigmoid(grayscale_intensity)

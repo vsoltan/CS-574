@@ -41,6 +41,11 @@ def testARImage(test_dataset_path, model, info, verbose=True):
         # WRITE CODE HERE TO FIX THE DESTROYED IMAGE REGION
         # USING AN AUTOREGRESSIVE APPROACH
 
+        # iterate over distorted area 
+        for x in range(destroy_part_x1, destroy_part_x2):
+            for y in range(destroy_part_y1, destroy_part_y2):
+                rec_im[0, 0, x, y] = model.forward(rec_im)[0, 0, x, y]  
+
         # measure the reconstruction error        
         diff_im = rec_im[0, 0, destroy_part_x1:destroy_part_x2, destroy_part_y1:destroy_part_y2] - im[0,  destroy_part_x1:destroy_part_x2, destroy_part_y1:destroy_part_y2]
         rec_error_s = np.mean( np.abs(diff_im.cpu().detach().numpy()) )
