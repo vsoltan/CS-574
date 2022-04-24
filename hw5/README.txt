@@ -1,0 +1,1 @@
+Average Reconstruction Error (best model):0.032337

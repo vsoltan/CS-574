@@ -1,3 +1,4 @@
+from audioop import bias
 import torch.nn as nn
 
 IMAGE_WIDTH = 100 
@@ -41,20 +42,20 @@ class PixelCNN(nn.Module):
 
         self.relu = nn.LeakyReLU(0.001)
 
-        # TODO: check if you need to use bias! 
-        self.conv1 = MaskedCNN('A', in_channels=1, out_channels=16, \
-            padding=(3, 3), kernel_size=(3, 3), stride=1, dilation=3, padding_mode='reflect')
+        # conv layers followed by batchnorm, no bias required 
+        self.conv1 = MaskedCNN('A', in_channels=1, out_channels=16, padding=(3, 3), \
+            kernel_size=(3, 3), stride=1, dilation=3, padding_mode='reflect', bias=False)
         self.batch_norm1 = nn.BatchNorm2d(16)
 
-        self.conv2 = MaskedCNN('B', in_channels=16, out_channels=16, \
-            padding=(3, 3), kernel_size=(3, 3), stride=1, dilation=3, padding_mode='reflect')
+        self.conv2 = MaskedCNN('B', in_channels=16, out_channels=16, padding=(3, 3), \
+            kernel_size=(3, 3), stride=1, dilation=3, padding_mode='reflect', bias=False)
         self.batch_norm2 = nn.BatchNorm2d(16)
 
-        self.conv3 = MaskedCNN('B', in_channels=16, out_channels=16, \
-            padding=(3, 3), kernel_size=(3, 3), stride=1, dilation=3, padding_mode='reflect')
+        self.conv3 = MaskedCNN('B', in_channels=16, out_channels=16, padding=(3, 3), \
+            kernel_size=(3, 3), stride=1, dilation=3, padding_mode='reflect', bias=False)
         self.batch_norm3 = nn.BatchNorm2d(16)
 
-        self.conv = nn.Conv2d(in_channels=16, out_channels=1, kernel_size=1)
+        self.conv = nn.Conv2d(in_channels=16, out_channels=1, kernel_size=(1, 1), bias=True)
         self.sigmoid = nn.Sigmoid()
 
     def forward(self, x):

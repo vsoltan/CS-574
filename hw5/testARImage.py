@@ -44,6 +44,7 @@ def testARImage(test_dataset_path, model, info, verbose=True):
         # iterate over distorted area 
         for x in range(destroy_part_x1, destroy_part_x2):
             for y in range(destroy_part_y1, destroy_part_y2):
+                # rec_im is updated then fed into model in autoregressive manner
                 rec_im[0, 0, x, y] = model.forward(rec_im)[0, 0, x, y]  
 
         # measure the reconstruction error        
